@@ -145,19 +145,41 @@ export default function Home() {
                 </h4>
                 <div className="max-h-60 overflow-y-auto space-y-1 pr-1">
                   {matchedItems.map(m => (
-                    <div key={m.orderItem.id} className={`text-xs p-2 rounded border ${m.status === 'matched' ? 'bg-green-500/10 border-green-500/20 text-green-600 dark:text-green-400' : 'bg-destructive/10 border-destructive/20 text-destructive'}`}>
+                    <div key={m.orderItem.id} className={`text-xs p-2 rounded border ${m.status === 'matched' ? 'bg-green-500/10 border-green-500/20 text-green-600 dark:text-green-400' :
+                        m.status === 'ambiguous' ? 'bg-yellow-500/10 border-yellow-500/20 text-yellow-600 dark:text-yellow-400' :
+                          'bg-destructive/10 border-destructive/20 text-destructive'
+                      }`}>
                       <div className="font-mono truncate" title={m.orderItem.sku}>{m.orderItem.sku}</div>
                       <div className="flex items-center gap-2 mt-1 opacity-80">
                         {m.variantSource === 'NOTES' && <span className="px-1 py-0.5 bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 rounded text-[10px] uppercase">Note Override</span>}
                         {m.variantSource === 'FALLBACK' && <span className="px-1 py-0.5 bg-orange-500/20 text-orange-600 dark:text-orange-400 rounded text-[10px] uppercase">Fallback</span>}
                         {m.variantSource === 'HEURISTIC' && <span className="px-1 py-0.5 bg-blue-500/20 text-blue-600 dark:text-blue-400 rounded text-[10px] uppercase">Fuzzy</span>}
+                        {m.variantSource === 'AMBIGUOUS' && <span className="px-1 py-0.5 bg-red-500/20 text-red-600 dark:text-red-400 rounded text-[10px] uppercase">Ambiguous</span>}
                         <span>{m.detectedVariant || m.orderItem.variant}</span>
                       </div>
                       {m.status === 'missing_image' && <div className="mt-1 font-bold">MISSING IMAGE</div>}
+                      {m.status === 'ambiguous' && <div className="mt-1 font-bold">AMBIGUOUS</div>}
                     </div>
                   ))}
                 </div>
               </div>
+
+              {/* Ambiguous Items List */}
+              {matchedItems.some(m => m.status === 'ambiguous') && (
+                <div className="mt-4">
+                  <h4 className="text-xs font-semibold text-yellow-500 mb-2 flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" /> Ambiguous Matches
+                  </h4>
+                  <div className="max-h-40 overflow-y-auto space-y-1">
+                    {matchedItems.filter(m => m.status === 'ambiguous').map(m => (
+                      <div key={m.orderItem.id} className="text-xs bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 p-2 rounded border border-yellow-500/20">
+                        <div className="font-mono">{m.orderItem.sku}</div>
+                        <div className="opacity-70">Multiple candidates found</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Missing Items List */}
               {matchedItems.some(m => m.status === 'missing_image') && (

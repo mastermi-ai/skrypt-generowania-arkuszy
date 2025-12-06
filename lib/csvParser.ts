@@ -31,14 +31,18 @@ export function parseCSV(content: string): OrderItem[] {
         let variantSource: VariantSource = 'SKU';
 
         // Priority 1: Notes (Hard Override)
+        // Priority 1: Notes (Hard Override)
         let noteOverride = false;
         if (notes) {
-            const upperNotes = notes.toUpperCase();
-            if (upperNotes.includes('KOLOR: WH')) {
+            // Regex for "kolor: wh" or "kolor: bk" (case insensitive, flexible whitespace)
+            const whRegex = /kolor\s*:\s*wh/i;
+            const bkRegex = /kolor\s*:\s*bk/i;
+
+            if (whRegex.test(notes)) {
                 variant = 'WH';
                 variantSource = 'NOTES';
                 noteOverride = true;
-            } else if (upperNotes.includes('KOLOR: BK')) {
+            } else if (bkRegex.test(notes)) {
                 variant = 'BK';
                 variantSource = 'NOTES';
                 noteOverride = true;

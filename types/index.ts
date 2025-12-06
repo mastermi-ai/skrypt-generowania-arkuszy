@@ -1,5 +1,5 @@
 export type Variant = 'WH' | 'BK';
-export type VariantSource = 'NOTES' | 'SKU' | 'HEURISTIC' | 'FALLBACK';
+export type VariantSource = 'NOTES' | 'SKU' | 'HEURISTIC' | 'FALLBACK' | 'AMBIGUOUS';
 
 export interface OrderItem {
     id: string;
@@ -25,7 +25,7 @@ export interface UploadedImage {
 export interface MatchedItem {
     orderItem: OrderItem;
     image?: UploadedImage;
-    status: 'matched' | 'missing_image' | 'manual_review';
+    status: 'matched' | 'missing_image' | 'manual_review' | 'ambiguous';
     detectedVariant?: Variant;
     variantSource?: VariantSource;
 }
