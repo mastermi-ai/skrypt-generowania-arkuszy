@@ -1,4 +1,5 @@
 export type Variant = 'WH' | 'BK';
+export type VariantSource = 'NOTES' | 'SKU' | 'HEURISTIC' | 'FALLBACK';
 
 export interface OrderItem {
     id: string;
@@ -6,6 +7,7 @@ export interface OrderItem {
     orderId: string;
     notes?: string;
     variant: Variant;
+    variantSource: VariantSource;
     quantity: number;
     originalLine: Record<string, string>;
 }
@@ -24,6 +26,8 @@ export interface MatchedItem {
     orderItem: OrderItem;
     image?: UploadedImage;
     status: 'matched' | 'missing_image' | 'manual_review';
+    detectedVariant?: Variant;
+    variantSource?: VariantSource;
 }
 
 export interface SheetItem {
@@ -43,5 +47,5 @@ export interface Sheet {
     width: number;
     height: number;
     items: SheetItem[];
-    variant: Variant;
+    variant: Variant | 'MIXED';
 }

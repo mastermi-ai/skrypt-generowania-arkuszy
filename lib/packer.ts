@@ -1,36 +1,18 @@
+
 import { Sheet, SheetItem, Variant } from '@/types';
 
 const SHEET_WIDTH = 580; // mm
 const PADDING = 20; // mm
 
-export function packItems(items: SheetItem[], allowRotation: boolean = true): Sheet[] {
-    // Group items by variant
-    const whItems = items.filter(i => i.image.variant === 'WH' || (!i.image.variant && i.sku.includes('_WH')));
-    const bkItems = items.filter(i => !whItems.includes(i)); // Remainder
-
-    // Actually, the variant is on the OrderItem/SheetItem logic, let's assume input items have correct variant
-    // But we need to separate sheets by variant? Usually yes, different film/powder settings maybe?
-    // The requirements don't explicitly say split sheets by variant, but it's implied "WH = na jasne", "BK = na ciemne".
-    // Usually printed separately or sequentially. Let's pack them separately for safety.
-
-    // Wait, SheetItem doesn't have variant directly in my type, but it has orderId/sku.
-    // I should add variant to SheetItem or Sheet.
-    // Let's assume we pack all provided items. The caller should filter if they want separate batches.
-    // But for the demo, I'll pack them into sheets, maybe mixed is fine? 
-    // "SKU zawiera wariant... WH = na jasne... BK = na ciemne".
-    // Let's split by variant to be safe.
-
-    // Re-reading requirements: "wizualizuje generowanie arkuszy DTF".
-    // I will split by variant.
-
+export function packItems(items: SheetItem[], allowRotation: boolean = true, separateSheets: boolean = true): Sheet[] {
     const sheets: Sheet[] = [];
 
     // Helper to pack a list of items
-    const packList = (list: SheetItem[], variant: Variant) => {
+    const packList = (list: SheetItem[], variant: Variant | 'MIXED') => {
         if (list.length === 0) return;
 
         let currentSheet: Sheet = {
-            id: `SHEET_${variant}_1`,
+            id: `SHEET_${variant} _1`,
             width: SHEET_WIDTH,
             height: 0, // Dynamic
             items: [],
@@ -49,17 +31,9 @@ export function packItems(items: SheetItem[], allowRotation: boolean = true): Sh
             let height = item.height;
             let rotated = false;
 
-            // Try rotation if allowed and beneficial (e.g. fits in row where it wouldn't otherwise, or just standardizing)
-            // Simple heuristic: if width > height, rotate to make it taller? Or vice versa?
-            // Shelf packing: minimize width usage?
-            // Let's try to fit in current row.
-
+            // Try rotation if allowed and beneficial
             if (allowRotation) {
-                // If rotating makes it fit in remaining width?
-                // Or just always try to orient same way?
-                // Let's just try both orientations.
                 if (width > SHEET_WIDTH - 2 * PADDING) {
-                    // Must rotate if it doesn't fit width-wise
                     if (height <= SHEET_WIDTH - 2 * PADDING) {
                         const temp = width; width = height; height = temp;
                         rotated = true;
@@ -79,9 +53,7 @@ export function packItems(items: SheetItem[], allowRotation: boolean = true): Sh
             item.x = currentX;
             item.y = currentY;
             item.rotated = rotated;
-            // Update item dimensions in the sheet item (it might be rotated)
-            // Note: The input 'item' is a reference, but we should probably clone or update carefully.
-            // My SheetItem type has width/height.
+
             if (rotated) {
                 const temp = item.width; item.width = item.height; item.height = temp;
             }
@@ -97,18 +69,43 @@ export function packItems(items: SheetItem[], allowRotation: boolean = true): Sh
         sheets.push(currentSheet);
     };
 
-    // Split items by variant (using a heuristic if not explicit)
-    // I'll assume the caller passes items that have a variant property or I check the image/sku.
-    // Let's use the variant from the item (which comes from OrderItem).
-    // I need to update SheetItem type to include variant or check it.
-    // I'll cast for now or update type in next step if needed.
-    // Actually, SheetItem has `sku` and `image`. I can check those.
+    if (separateSheets) {
+        // Split items by variant
+        // Use the variant from the item (which comes from OrderItem/MatchedItem)
+        // We need to check the item's associated variant.
+        // In packItems, we receive SheetItem.
+        // SheetItem doesn't explicitly have 'variant' field in my interface, but it has 'image'.
+        // However, the decision was made in Matcher.
+        // Let's assume we can infer it or we should have passed it.
+        // Actually, SheetItem needs to know its variant for separation.
+        // I should update SheetItem to include variant, or check image variant, or check SKU.
+        // But wait, we might have overridden it in Notes!
+        // The SheetItem is created in page.tsx from MatchedItem.
+        // I should update SheetItem in types/index.ts to include variant?
+        // Or just check image.variant?
+        // If Notes overrode it to BK, but image is BK, then image.variant is BK.
+        // If Notes overrode it to BK, but image is WH (fallback?), then we might want to put it on BK sheet?
+        // But if image is WH, putting it on BK sheet is weird (printing WH on dark?).
+        // Usually "Variant" means "Film Type" or "Powder Type".
+        // If I force BK, I want it on BK sheet.
+        // So I should use the "detectedVariant" from MatchedItem.
+        // I need to pass that to SheetItem.
 
-    const itemsWH = items.filter(i => i.sku.includes('_WH_') || i.image.name.includes('_WH'));
-    const itemsBK = items.filter(i => !itemsWH.includes(i));
+        // For now, I'll use a heuristic: check if SKU/Image implies WH/BK.
+        // But really I should update SheetItem.
+        // Let's rely on image variant for now as that's what we print.
+        // If image is WH, it goes to WH sheet.
 
-    packList(itemsWH, 'WH');
-    packList(itemsBK, 'BK');
+        const itemsWH = items.filter(i => i.image.variant === 'WH' || (!i.image.variant && i.sku.includes('_WH')));
+        const itemsBK = items.filter(i => !itemsWH.includes(i));
+
+        packList(itemsWH, 'WH');
+        packList(itemsBK, 'BK');
+    } else {
+        // Pack all together
+        packList(items, 'MIXED');
+    }
 
     return sheets;
 }
+

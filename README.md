@@ -1,47 +1,58 @@
-# DTF Sheet Visualizer (Proof of Concept)
+# Wizualizator Arkuszy DTF (Proof of Concept)
 
-A web application to visualize the generation of DTF (Direct to Film) sheets from a CSV of orders and a set of PNG designs.
+Aplikacja webowa do wizualizacji generowania arkuszy DTF (Direct to Film) na podstawie pliku CSV z zamówieniami i zestawu grafik PNG.
 
-## Features
+## Funkcje
 
-- **CSV Parsing**: Automatically extracts SKU, Order Number, and Notes.
-- **Variant Matching**: Matches orders to images based on SKU/Notes and "WH" (White) / "BK" (Black) variants.
-- **Auto-Packing**: Uses a "Shelf" bin-packing algorithm to arrange designs on a 58cm wide sheet with 20mm padding.
-- **Visualization**: Interactive preview of the generated sheets with dimensions and cut lines.
-- **Export**: Download a preview PNG of the arranged sheet.
+- **Parsowanie CSV**: Automatycznie wyodrębnia SKU, Numer zamówienia i Notatki.
+- **Dobór Wariantu (Logika Biznesowa)**:
+  - **Priorytet 1 (Override)**: Jeśli w kolumnie `NOTATKI` znajduje się wpis `KOLOR: WH` lub `KOLOR: BK`, wariant ten jest wymuszany, niezależnie od SKU.
+  - **Priorytet 2 (SKU)**: Jeśli SKU zawiera `_WH_` lub `_BK_`, wariant jest pobierany z nazwy.
+  - **Fuzzy Matching**: Dla SKU bez wariantu (np. `_MIX_`, `_OS`), aplikacja szuka pasujących plików po nazwie bazowej.
+- **Automatyczne Układanie (Packing)**: Używa algorytmu półkowego ("Shelf") do układania grafik na arkuszu o szerokości 58cm z odstępem 20mm.
+- **Konfiguracja Arkuszy**: Możliwość wyboru trybu:
+  - **Osobne arkusze (WH/BK)**: Domyślnie, grafiki są grupowane na osobnych arkuszach dla bieli i czerni.
+  - **Wspólny arkusz**: Wszystkie grafiki na jednym arkuszu (Mixed).
+- **Wizualizacja**: Interaktywny podgląd wygenerowanych arkuszy z siatką i liniami cięcia.
+- **Diagnostyka**: Szczegółowe informacje o źródle dopasowania wariantu (Note Override, SKU, Fuzzy Match, Fallback).
+- **Eksport**: Pobieranie podglądu arkusza jako PNG.
 
-## Getting Started
+## Uruchomienie
 
-1. **Install dependencies**:
+1. **Instalacja zależności**:
    ```bash
    npm install
    ```
 
-2. **Run the development server**:
+2. **Uruchomienie serwera developerskiego**:
    ```bash
    npm run dev
    ```
 
-3. **Open the app**:
-   Navigate to [http://localhost:3000](http://localhost:3000).
+3. **Otwórz aplikację**:
+   Przejdź pod adres [http://localhost:3000](http://localhost:3000).
 
-## Usage
+## Instrukcja Obsługi
 
-1. **Upload CSV**: Drag and drop the `orders.csv` file (sample provided in `public/samples`).
-2. **Upload Images**: Drag and drop the PNG files (samples provided in `public/samples`).
-3. **View Results**: The app will automatically match orders to images and generate the sheets.
-4. **Download**: Click "Download Preview PNG" to save the visualization.
+1. **Wgraj CSV**: Przeciągnij plik `orders.csv` (przykłady w `public/samples`) w pole "Orders".
+2. **Wgraj Grafiki**: Przeciągnij pliki PNG (przykłady w `public/samples`) w pole "Designs".
+3. **Sprawdź Wyniki**:
+   - Panel "Status" pokaże liczbę dopasowanych zamówień.
+   - Sekcja "Diagnostics" wyjaśni, dlaczego dany wariant został wybrany (np. "NOTE OVERRIDE").
+4. **Konfiguracja**:
+   - Użyj przełączników w panelu bocznym, aby włączyć/wyłączyć rotację 90° lub rozdzielanie arkuszy.
+5. **Pobierz**: Kliknij "Download Preview PNG", aby zapisać wizualizację.
 
-## Assumptions & Limitations (PoC)
+## Założenia i Ograniczenia (PoC)
 
-- **Sheet Width**: Fixed at 580mm.
-- **DPI**: Assumes 300 DPI for image sizing (1px = 0.0846mm).
-- **Colors**: Preview is in RGB. Production files should be converted to CMYK.
-- **Packing**: Uses a simple greedy algorithm. Does not support complex nesting or rotation optimization beyond 90 degrees.
+- **Szerokość Arkusza**: Stała 580mm.
+- **DPI**: Przyjmuje 300 DPI dla skalowania obrazów (1px = 0.0846mm).
+- **Kolory**: Podgląd w RGB. Produkcyjne pliki powinny być konwertowane do CMYK.
+- **Packing**: Prosty algorytm zachłanny. Nie obsługuje zaawansowanego zagnieżdżania (nesting).
 
-## Tech Stack
+## Technologie
 
 - Next.js 15 (App Router)
 - TypeScript
 - Tailwind CSS v4
-- Lucide React (Icons)
+- Lucide React (Ikony)

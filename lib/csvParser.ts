@@ -1,4 +1,4 @@
-import { OrderItem, Variant } from '@/types';
+import { OrderItem, Variant, VariantSource } from '@/types';
 
 export function parseCSV(content: string): OrderItem[] {
     const lines = content.split(/\r?\n/).filter(line => line.trim() !== '');
@@ -28,15 +28,39 @@ export function parseCSV(content: string): OrderItem[] {
 
         // Logic to determine variant
         let variant: Variant = 'WH'; // Default
+        let variantSource: VariantSource = 'SKU';
 
-        // Priority 1: Notes
+        // Priority 1: Notes (Hard Override)
+        let noteOverride = false;
         if (notes) {
-            if (notes.toUpperCase().includes('KOLOR: WH')) variant = 'WH';
-            else if (notes.toUpperCase().includes('KOLOR: BK')) variant = 'BK';
-        } else {
+            const upperNotes = notes.toUpperCase();
+            if (upperNotes.includes('KOLOR: WH')) {
+                variant = 'WH';
+                variantSource = 'NOTES';
+                noteOverride = true;
+            } else if (upperNotes.includes('KOLOR: BK')) {
+                variant = 'BK';
+                variantSource = 'NOTES';
+                noteOverride = true;
+            }
+        }
+
+        if (!noteOverride) {
             // Priority 2: SKU
-            if (sku.toUpperCase().includes('_WH_')) variant = 'WH';
-            else if (sku.toUpperCase().includes('_BK_')) variant = 'BK';
+            if (sku.toUpperCase().includes('_WH_')) {
+                variant = 'WH';
+                variantSource = 'SKU';
+            } else if (sku.toUpperCase().includes('_BK_')) {
+                variant = 'BK';
+                variantSource = 'SKU';
+            } else {
+                // Fallback / Heuristic needed later, but for now default to WH
+                // We will mark it as SKU derived or maybe FALLBACK if we want to be strict?
+                // Let's say SKU for now if it defaults, or maybe FALLBACK?
+                // Actually, if SKU doesn't have it, we default to WH.
+                variant = 'WH';
+                variantSource = 'FALLBACK'; // Or 'HEURISTIC'
+            }
         }
 
         items.push({
@@ -45,6 +69,7 @@ export function parseCSV(content: string): OrderItem[] {
             orderId,
             notes,
             variant,
+            variantSource,
             quantity: 1, // Assuming 1 per row for now, unless quantity column exists
             originalLine: { sku, orderId, notes: notes || '' }
         });

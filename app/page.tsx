@@ -8,7 +8,7 @@ import { parseCSV } from '@/lib/csvParser';
 import { matchItems } from '@/lib/matcher';
 import { packItems } from '@/lib/packer';
 import { OrderItem, UploadedImage, Sheet, MatchedItem } from '@/types';
-import { AlertCircle, CheckCircle2, Settings2 } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Settings2, Info } from 'lucide-react';
 
 export default function Home() {
   const [csvFile, setCsvFile] = useState<File | undefined>();
@@ -19,6 +19,7 @@ export default function Home() {
 
   // Options
   const [allowRotation, setAllowRotation] = useState(true);
+  const [separateSheets, setSeparateSheets] = useState(true);
 
   // Handle CSV Upload
   const handleCsvUpload = async (file: File) => {
@@ -42,18 +43,8 @@ export default function Home() {
       const img = new Image();
       const url = URL.createObjectURL(file);
       img.onload = () => {
-        // Convert px to mm? 
-        // Assumption: 300 DPI. 1 inch = 25.4mm. 300 px = 25.4mm.
-        // 1 px = 25.4 / 300 = 0.0846 mm.
-        // Or user provides mm?
-        // Demo: assume 1px = 1mm for simplicity or use a standard DPI.
-        // Let's use 300 DPI conversion for realism.
+        // Assumption: 300 DPI. 1 inch = 25.4mm.
         const mmPerPx = 25.4 / 300;
-
-        // Actually, for the demo to work with random PNGs from web (usually 72/96 DPI), 
-        // treating them as 300 DPI might make them tiny.
-        // Let's assume the PNGs are sized in pixels such that 1000px ~ 10-20cm?
-        // Let's stick to 300 DPI as per requirements ("finalny pipeline powinien zapewnić CMYK, 300 DPI").
 
         newImages.push({
           id: file.name,
@@ -103,10 +94,10 @@ export default function Home() {
       }));
 
     // 3. Pack
-    const generatedSheets = packItems(itemsToPack, allowRotation);
+    const generatedSheets = packItems(itemsToPack, allowRotation, separateSheets);
     setSheets(generatedSheets);
 
-  }, [orders, images, allowRotation]);
+  }, [orders, images, allowRotation, separateSheets]);
 
   return (
     <div className="flex h-full">
@@ -147,6 +138,27 @@ export default function Home() {
                 </div>
               </div>
 
+              {/* Detailed Diagnostics */}
+              <div className="mt-4 space-y-2">
+                <h4 className="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1">
+                  <Info className="w-3 h-3" /> Diagnostics
+                </h4>
+                <div className="max-h-60 overflow-y-auto space-y-1 pr-1">
+                  {matchedItems.map(m => (
+                    <div key={m.orderItem.id} className={`text-xs p-2 rounded border ${m.status === 'matched' ? 'bg-green-500/10 border-green-500/20 text-green-600 dark:text-green-400' : 'bg-destructive/10 border-destructive/20 text-destructive'}`}>
+                      <div className="font-mono truncate" title={m.orderItem.sku}>{m.orderItem.sku}</div>
+                      <div className="flex items-center gap-2 mt-1 opacity-80">
+                        {m.variantSource === 'NOTES' && <span className="px-1 py-0.5 bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 rounded text-[10px] uppercase">Note Override</span>}
+                        {m.variantSource === 'FALLBACK' && <span className="px-1 py-0.5 bg-orange-500/20 text-orange-600 dark:text-orange-400 rounded text-[10px] uppercase">Fallback</span>}
+                        {m.variantSource === 'HEURISTIC' && <span className="px-1 py-0.5 bg-blue-500/20 text-blue-600 dark:text-blue-400 rounded text-[10px] uppercase">Fuzzy</span>}
+                        <span>{m.detectedVariant || m.orderItem.variant}</span>
+                      </div>
+                      {m.status === 'missing_image' && <div className="mt-1 font-bold">MISSING IMAGE</div>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               {/* Missing Items List */}
               {matchedItems.some(m => m.status === 'missing_image') && (
                 <div className="mt-4">
@@ -167,9 +179,9 @@ export default function Home() {
           )}
 
           {/* Controls */}
-          <div className="space-y-2">
+          <div className="space-y-4">
             <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Packing Options</h3>
-            <label className="flex items-center gap-2 text-sm cursor-pointer">
+            <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
               <input
                 type="checkbox"
                 checked={allowRotation}
@@ -177,6 +189,15 @@ export default function Home() {
                 className="rounded border-border bg-secondary"
               />
               Allow 90° Rotation
+            </label>
+            <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={separateSheets}
+                onChange={e => setSeparateSheets(e.target.checked)}
+                className="rounded border-border bg-secondary"
+              />
+              Separate Sheets (WH/BK)
             </label>
           </div>
         </div>
