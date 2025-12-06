@@ -1,36 +1,47 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# DTF Sheet Visualizer (Proof of Concept)
+
+A web application to visualize the generation of DTF (Direct to Film) sheets from a CSV of orders and a set of PNG designs.
+
+## Features
+
+- **CSV Parsing**: Automatically extracts SKU, Order Number, and Notes.
+- **Variant Matching**: Matches orders to images based on SKU/Notes and "WH" (White) / "BK" (Black) variants.
+- **Auto-Packing**: Uses a "Shelf" bin-packing algorithm to arrange designs on a 58cm wide sheet with 20mm padding.
+- **Visualization**: Interactive preview of the generated sheets with dimensions and cut lines.
+- **Export**: Download a preview PNG of the arranged sheet.
 
 ## Getting Started
 
-First, run the development server:
+1. **Install dependencies**:
+   ```bash
+   npm install
+   ```
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+2. **Run the development server**:
+   ```bash
+   npm run dev
+   ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+3. **Open the app**:
+   Navigate to [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Usage
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. **Upload CSV**: Drag and drop the `orders.csv` file (sample provided in `public/samples`).
+2. **Upload Images**: Drag and drop the PNG files (samples provided in `public/samples`).
+3. **View Results**: The app will automatically match orders to images and generate the sheets.
+4. **Download**: Click "Download Preview PNG" to save the visualization.
 
-## Learn More
+## Assumptions & Limitations (PoC)
 
-To learn more about Next.js, take a look at the following resources:
+- **Sheet Width**: Fixed at 580mm.
+- **DPI**: Assumes 300 DPI for image sizing (1px = 0.0846mm).
+- **Colors**: Preview is in RGB. Production files should be converted to CMYK.
+- **Packing**: Uses a simple greedy algorithm. Does not support complex nesting or rotation optimization beyond 90 degrees.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Tech Stack
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Next.js 15 (App Router)
+- TypeScript
+- Tailwind CSS v4
+- Lucide React (Icons)
